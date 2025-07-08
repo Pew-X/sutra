@@ -1,0 +1,11 @@
+# Configuration for the third agent node
+host: "127.0.0.1"
+grpc_port: 9094
+gossip_port: 9095
+
+# Join the first agent
+join_peers:
+  - "127.0.0.1:9091"
+
+log_level: "info"
+wal_path: "./data/agent3/knowledge.log"

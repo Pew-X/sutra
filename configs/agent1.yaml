@@ -1,0 +1,10 @@
+# Configuration for the first agent node
+host: "127.0.0.1"
+grpc_port: 9090
+gossip_port: 9091
+
+# First node, no peers to join initially
+join_peers: []
+
+log_level: "info"
+wal_path: "./data/agent1/knowledge.log"

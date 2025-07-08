@@ -1,0 +1,12 @@
+# Example configuration for a sutra-agent node.
+host: "0.0.0.0"
+grpc_port: 9090
+gossip_port: 9091
+
+# List of one or more existing agent nodes to join the mesh.
+# For the first node, this can be empty.
+join_peers: []
+  # - "10.0.1.1:9091"
+
+log_level: "info"
+wal_path: "./data/knowledge.log"

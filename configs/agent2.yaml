@@ -1,0 +1,11 @@
+# Configuration for the second agent node
+host: "127.0.0.1"
+grpc_port: 9092
+gossip_port: 9093
+
+# Join the first agent
+join_peers:
+  - "127.0.0.1:9091"
+
+log_level: "info"
+wal_path: "./data/agent2/knowledge.log"

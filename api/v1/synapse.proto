@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package synapse.v1;
+option go_package = "github.com/Pew-X/sutra/api/v1";
+
+// SynapseService defines the core API for the Synapse knowledge mesh.
+service SynapseService {
+  // Ingest accepts a stream of knowledge packets from scouts
+  rpc Ingest(stream Kpak) returns (IngestResponse);
+  
+  // Query retrieves knowledge packets by subject
+  rpc Query(QueryRequest) returns (stream Kpak);
+  
+  // Health check for mesh monitoring
+  rpc Health(HealthRequest) returns (HealthResponse);
+  
+  // GetPeers returns information about mesh members
+  rpc GetPeers(PeersRequest) returns (PeersResponse);
+  
+  // GetMetrics returns agent performance metrics
+  rpc GetMetrics(MetricsRequest) returns (MetricsResponse);
+}
+
+// Kpak represents a knowledge packet - the atomic unit of knowledge
+message Kpak {
+  string subject = 1;      // Who/what this is about
+  string predicate = 2;    // The relationship/property
+  string object = 3;       // The value (JSON-encoded for flexibility)
+  string source = 4;       // Origin of this knowledge
+  float confidence = 5;    // Trust level (0.0-1.0)
+  int64 timestamp = 6;     // Unix timestamp when created
+  string id = 7;           // Content hash for uniqueness
+  string spid = 8;         // Subject+Predicate hash for indexing
+}
+
+// IngestResponse confirms receipt of knowledge packets
+message IngestResponse {
+  int32 accepted = 1;      // Number of k-paks accepted
+  int32 rejected = 2;      // Number of k-paks rejected
+  repeated string errors = 3; // Error messages if any
+}
+
+// QueryRequest specifies what knowledge to retrieve
+message QueryRequest {
+  string subject = 1;      // Query by subject
+  optional string predicate = 2; // Optional: filter by predicate
+}
+
+// Health check messages
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;       // "healthy", "degraded", etc.
+  int32 kpak_count = 2;    // Total knowledge packets stored
+  int64 uptime_seconds = 3; // How long this agent has been running
+}
+
+// Peer information messages
+message PeersRequest {}
+
+message PeersResponse {
+  repeated PeerInfo peers = 1;
+}
+
+message PeerInfo {
+  string address = 1;      // IP:port of the peer
+  string name = 2;         // Peer name/ID
+  int32 state = 3;         // Peer state (0=alive, 1=suspect, 2=dead)
+  int64 last_seen = 4;     // Unix timestamp of last contact
+}
+
+// Metrics messages
+message MetricsRequest {}
+
+message MetricsResponse {
+  int32 total_kpaks = 1;           // Total k-paks in memory
+  int32 total_subjects = 2;        // Total unique subjects
+  int64 ingest_rate_per_min = 3;   // K-paks ingested per minute
+  int64 query_rate_per_min = 4;    // Queries per minute
+  int64 uptime_seconds = 5;        // Agent uptime
+  int64 memory_usage_bytes = 6;    // Memory usage
+  float cpu_usage_percent = 7;     // CPU usage percentage
+  string version = 8;              // Agent version
+  repeated string active_sources = 9; // List of active data sources
+}
