@@ -69,6 +69,7 @@ func ingestCmd() *cobra.Command {
 	var (
 		source     string
 		confidence float64
+		ttlSeconds int64
 	)
 
 	cmd := &cobra.Command{
@@ -81,12 +82,13 @@ func ingestCmd() *cobra.Command {
 			predicate := args[1]
 			object := args[2]
 
-			return ingestKnowledge(subject, predicate, object, source, float32(confidence))
+			return ingestKnowledge(subject, predicate, object, source, float32(confidence), ttlSeconds)
 		},
 	}
 
 	cmd.Flags().StringVar(&source, "source", "synctl", "Source identifier for this knowledge")
 	cmd.Flags().Float64Var(&confidence, "confidence", 1.0, "Confidence level (0.0-1.0)")
+	cmd.Flags().Int64Var(&ttlSeconds, "ttl", 0, "Time-to-live in seconds (0 = never expires)")
 
 	return cmd
 }
@@ -211,7 +213,7 @@ func queryKnowledge(subject string, predicate *string) error {
 }
 
 // ingestKnowledge sends a knowledge packet to the mesh
-func ingestKnowledge(subject, predicate, object, source string, confidence float32) error {
+func ingestKnowledge(subject, predicate, object, source string, confidence float32, ttlSeconds int64) error {
 	client, conn, err := connectToAgent()
 	if err != nil {
 		return err
@@ -226,6 +228,11 @@ func ingestKnowledge(subject, predicate, object, source string, confidence float
 		return fmt.Errorf("failed to start ingest stream: %w", err)
 	}
 
+	var expiresAt int64
+	if ttlSeconds > 0 {
+		expiresAt = time.Now().Unix() + ttlSeconds
+	}
+
 	kpak := &v1.Kpak{
 		Subject:    subject,
 		Predicate:  predicate,
@@ -233,6 +240,7 @@ func ingestKnowledge(subject, predicate, object, source string, confidence float
 		Source:     source,
 		Confidence: confidence,
 		Timestamp:  time.Now().Unix(),
+		ExpiresAt:  expiresAt,
 	}
 
 	if err := stream.Send(kpak); err != nil {
@@ -247,7 +255,11 @@ func ingestKnowledge(subject, predicate, object, source string, confidence float
 	if response.Accepted > 0 {
 		fmt.Printf("✓ Knowledge packet accepted\n")
 		fmt.Printf("  %s %s %s\n", subject, predicate, object)
-		fmt.Printf("  Source: %s, Confidence: %.2f\n", source, confidence)
+		fmt.Printf("  Source: %s, Confidence: %.2f", source, confidence)
+		if ttlSeconds > 0 {
+			fmt.Printf(", TTL: %ds", ttlSeconds)
+		}
+		fmt.Printf("\n")
 	} else {
 		fmt.Printf("✗ Knowledge packet rejected\n")
 		if len(response.Errors) > 0 {

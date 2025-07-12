@@ -30,6 +30,7 @@ It is designed to be the **nervous system for your infrastructure**, providing a
 *   **Decentralized & Resilient:** No single point of failure. The mesh is designed to survive node and network outages using a peer-to-peer gossip protocol.
 *   **Deterministic Reconciliation:** A simple but powerful `confidence + timestamp` algorithm resolves conflicting facts, ensuring the mesh always converges on the most trustworthy information.
 *   **Immutable Audit Trail:** A Write-Ahead Log (WAL) on each agent provides a complete, auditable history of every claim the system has ever processed.
+*   **🆕 Time-To-Live (TTL) & Garbage Collection:** Built-in memory management with configurable TTL for k-paks and automatic cleanup of expired data to prevent unbounded memory growth.
 
 ### How It Works
 
@@ -80,12 +81,19 @@ go build -o bin/sutra-ctl.exe ./cmd/sutra-ctl
 # Ingest a low-confidence fact into Agent 2 
 .\bin\sutra-ctl.exe --agent localhost:9092 ingest "pluto" "is_planet" "true" --source "OldTextbook" --confidence 0.6
 
-# Ingest a conflicting, high-confidence fact into Agent 3
-.\bin\sutra-ctl.exe --agent localhost:9094 ingest "pluto" "is_planet" "false" --source "IAU-2006" --confidence 0.99
+# Ingest a conflicting, high-confidence fact into Agent 3 with TTL
+.\bin\sutra-ctl.exe --agent localhost:9094 ingest "pluto" "is_planet" "false" --source "IAU-2006" --confidence 0.99 --ttl 300
+
+# Ingest a temporary fact with short TTL (expires in 30 seconds)
+.\bin\sutra-ctl.exe --agent localhost:9090 ingest "server1" "status" "maintenance" --source "admin" --ttl 30
 
 # Wait 5 seconds, then query Agent 1 for the converged truth
 .\bin\sutra-ctl.exe --agent localhost:9090 query "pluto"
 # EXPECTED OUTPUT: The system correctly reports that 'pluto is_planet false'
+
+# Query temporary data
+.\bin\sutra-ctl.exe --agent localhost:9090 query "server1"
+# EXPECTED OUTPUT: Shows maintenance status (will auto-expire after TTL)
 
 # Verify the mesh formed correctly
 .\bin\sutra-ctl.exe --agent localhost:9090 peers
@@ -123,9 +131,9 @@ Sūtra is an ambitious project. Our development is phased to deliver value and s
     *   **Goal:** Make Sūtra enterprise-ready and trustworthy.
     *   **Features:** End-to-end mTLS encryption, cryptographic signatures on all facts, and verifiable source identities.
 
-*   **Phase 3: The Stability Foundation ("Sūtra Stable")**
+*   **Phase 3: The Stability Foundation ("Sūtra Stable") ✅ COMPLETED**
     *   **Goal:** Ensure long-term operational health for production infrastructure.
-    *   **Features:** Time-to-Live (TTL) on k-paks, automatic garbage collection, and WAL compaction. Possible use of Merkle trees truth hash verification resulting in efficient deduplication.
+    *   **Features:** ✅ Time-to-Live (TTL) on k-paks, ✅ automatic garbage collection, and WAL compaction. Possible use of Merkle trees truth hash verification resulting in efficient deduplication.
 
 *   **Phase 4: The Expressiveness Foundation ("Sūtra Graph")**
     *   **Goal:** Evolve the data model to represent complex, real-world systems.

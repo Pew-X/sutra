@@ -1,0 +1,15 @@
+# Test configuration for TTL feature with fast garbage collection
+host: "0.0.0.0"
+grpc_port: 9091
+gossip_port: 9092
+
+# No peers for this test
+join_peers: []
+
+log_level: "info"
+wal_path: "./data/test_knowledge.log"
+
+# TTL and Garbage Collection settings for testing
+default_ttl_seconds: 0      # Default TTL for k-paks in seconds (0 = never expires)
+gc_enabled: true            # Enable automatic garbage collection of expired k-paks
+gc_interval_seconds: 10     # Run garbage collection every 10 seconds for testing

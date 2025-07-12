@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
@@ -26,6 +27,11 @@ type Config struct {
 	JoinPeers  []string `yaml:"join_peers"`
 	LogLevel   string   `yaml:"log_level"`
 	WALPath    string   `yaml:"wal_path"`
+
+	// TTL and Garbage Collection settings
+	DefaultTTLSeconds int64 `yaml:"default_ttl_seconds"` // Default TTL for k-paks (0 = never expires)
+	GCIntervalSeconds int64 `yaml:"gc_interval_seconds"` // How often to run garbage collection
+	GCEnabled         bool  `yaml:"gc_enabled"`          // Whether to enable garbage collection
 }
 
 // Agent is the main coordinator that manages all mesh components.
@@ -37,6 +43,7 @@ type Agent struct {
 	wal       *store.WAL
 	gossip    *gossip.Manager
 	metrics   *monitoring.Metrics
+	gc        *GarbageCollector
 	server    *grpc.Server
 	startTime time.Time
 
@@ -72,12 +79,16 @@ func NewAgent(config Config) (*Agent, error) {
 	// Initialize metrics
 	metrics := monitoring.NewMetrics()
 
+	// Initialize garbage collector
+	gc := NewGarbageCollector(engine, config.GCIntervalSeconds, config.GCEnabled)
+
 	agent := &Agent{
 		config:    config,
 		engine:    engine,
 		wal:       wal,
 		gossip:    gossipManager,
 		metrics:   metrics,
+		gc:        gc,
 		startTime: time.Now(),
 	}
 
@@ -122,6 +133,9 @@ func (a *Agent) Start() error {
 	if err := a.gossip.Start(); err != nil {
 		return fmt.Errorf("failed to start gossip manager: %w", err)
 	}
+
+	// Start garbage collector
+	a.gc.Start()
 
 	a.running = true
 	log.Printf("Sutra agent started successfully on %s:%d", a.config.Host, a.config.GRPCPort)
@@ -179,6 +193,11 @@ func (a *Agent) Shutdown() error {
 	}
 
 	log.Printf("Shutting down Synapse agent...")
+
+	// Stop garbage collector
+	if a.gc != nil {
+		a.gc.Stop()
+	}
 
 	// Stop gossip manager
 	if a.gossip != nil {
@@ -333,14 +352,48 @@ func (a *Agent) GetMetrics(ctx context.Context, req *v1.MetricsRequest) (*v1.Met
 // Helper methods
 
 func (a *Agent) protoToKpak(proto *v1.Kpak) *core.Kpak {
-	// Use NewKpak to ensure proper ID and SPID generation
-	return core.NewKpak(
+	// Calculate TTL from expires_at field or use default
+	var ttlSeconds int64
+	if proto.ExpiresAt > 0 {
+		now := time.Now().Unix()
+		if proto.ExpiresAt > now {
+			ttlSeconds = proto.ExpiresAt - now
+		} else {
+			ttlSeconds = 0 // Already expired, but we'll let reconciliation handle it
+		}
+	} else if a.config.DefaultTTLSeconds > 0 {
+		ttlSeconds = a.config.DefaultTTLSeconds
+	}
+
+	// Create k-pak with TTL
+	kpak := core.NewKpakWithTTL(
 		proto.Subject,
 		proto.Predicate,
 		proto.Object,
 		proto.Source,
 		proto.Confidence,
+		ttlSeconds,
 	)
+
+	// If the proto had specific timestamp and expires_at, preserve them
+	if proto.Timestamp > 0 {
+		kpak.Timestamp = proto.Timestamp
+	}
+	if proto.ExpiresAt > 0 {
+		kpak.ExpiresAt = proto.ExpiresAt
+	}
+
+	// Regenerate IDs if we modified timestamp
+	if proto.Timestamp > 0 {
+		// Regenerate computed fields manually since we're modifying the struct
+		data := fmt.Sprintf("%s|%s|%v|%s|%f|%d",
+			kpak.Subject, kpak.Predicate, kpak.Object, kpak.Source, kpak.Confidence, kpak.Timestamp)
+		hash := sha256.Sum256([]byte(data))
+		kpak.ID = fmt.Sprintf("%x", hash)[:16] // First 16 chars for readability
+		kpak.SPID = kpak.GenerateSPID()
+	}
+
+	return kpak
 }
 
 func (a *Agent) kpakToProto(kpak *core.Kpak) *v1.Kpak {
@@ -353,5 +406,6 @@ func (a *Agent) kpakToProto(kpak *core.Kpak) *v1.Kpak {
 		Timestamp:  kpak.Timestamp,
 		Id:         kpak.ID,
 		Spid:       kpak.SPID,
+		ExpiresAt:  kpak.ExpiresAt,
 	}
 }

@@ -24,14 +24,15 @@ const (
 // Kpak represents a knowledge packet - the atomic unit of knowledge
 type Kpak struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Subject       string                 `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`         // Who/what this is about
-	Predicate     string                 `protobuf:"bytes,2,opt,name=predicate,proto3" json:"predicate,omitempty"`     // The relationship/property
-	Object        string                 `protobuf:"bytes,3,opt,name=object,proto3" json:"object,omitempty"`           // The value (JSON-encoded for flexibility)
-	Source        string                 `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`           // Origin of this knowledge
-	Confidence    float32                `protobuf:"fixed32,5,opt,name=confidence,proto3" json:"confidence,omitempty"` // Trust level (0.0-1.0)
-	Timestamp     int64                  `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`    // Unix timestamp when created
-	Id            string                 `protobuf:"bytes,7,opt,name=id,proto3" json:"id,omitempty"`                   // Content hash for uniqueness
-	Spid          string                 `protobuf:"bytes,8,opt,name=spid,proto3" json:"spid,omitempty"`               // Subject+Predicate hash for indexing
+	Subject       string                 `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`                       // Who/what this is about
+	Predicate     string                 `protobuf:"bytes,2,opt,name=predicate,proto3" json:"predicate,omitempty"`                   // The relationship/property
+	Object        string                 `protobuf:"bytes,3,opt,name=object,proto3" json:"object,omitempty"`                         // The value (JSON-encoded for flexibility)
+	Source        string                 `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`                         // Origin of this knowledge
+	Confidence    float32                `protobuf:"fixed32,5,opt,name=confidence,proto3" json:"confidence,omitempty"`               // Trust level (0.0-1.0)
+	Timestamp     int64                  `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                  // Unix timestamp when created
+	Id            string                 `protobuf:"bytes,7,opt,name=id,proto3" json:"id,omitempty"`                                 // Content hash for uniqueness
+	Spid          string                 `protobuf:"bytes,8,opt,name=spid,proto3" json:"spid,omitempty"`                             // Subject+Predicate hash for indexing
+	ExpiresAt     int64                  `protobuf:"varint,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // Unix timestamp when this k-pak expires (0 = never expires)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,6 +121,13 @@ func (x *Kpak) GetSpid() string {
 		return x.Spid
 	}
 	return ""
+}
+
+func (x *Kpak) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
 }
 
 // IngestResponse confirms receipt of knowledge packets
@@ -632,7 +640,7 @@ var File_api_v1_synapse_proto protoreflect.FileDescriptor
 const file_api_v1_synapse_proto_rawDesc = "" +
 	"\n" +
 	"\x14api/v1/synapse.proto\x12\n" +
-	"synapse.v1\"\xd0\x01\n" +
+	"synapse.v1\"\xef\x01\n" +
 	"\x04Kpak\x12\x18\n" +
 	"\asubject\x18\x01 \x01(\tR\asubject\x12\x1c\n" +
 	"\tpredicate\x18\x02 \x01(\tR\tpredicate\x12\x16\n" +
@@ -643,7 +651,9 @@ const file_api_v1_synapse_proto_rawDesc = "" +
 	"confidence\x12\x1c\n" +
 	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\x12\x0e\n" +
 	"\x02id\x18\a \x01(\tR\x02id\x12\x12\n" +
-	"\x04spid\x18\b \x01(\tR\x04spid\"`\n" +
+	"\x04spid\x18\b \x01(\tR\x04spid\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\t \x01(\x03R\texpiresAt\"`\n" +
 	"\x0eIngestResponse\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\x05R\baccepted\x12\x1a\n" +
 	"\brejected\x18\x02 \x01(\x05R\brejected\x12\x16\n" +

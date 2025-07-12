@@ -9,3 +9,9 @@ join_peers:
 
 log_level: "info"
 wal_path: "./data/agent3/knowledge.log"
+
+
+
+gc_enabled: true
+gc_interval_seconds: 10      # Run GC every 10 seconds for fast testing
+default_ttl_seconds: 30      # Default TTL (0 means never expires)
