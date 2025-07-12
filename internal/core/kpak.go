@@ -113,6 +113,13 @@ func (k *Kpak) TimeToExpiry() int64 {
 	return k.ExpiresAt - now
 }
 
+// RegenerateComputedFields recalculates ID and SPID based on current field values.
+// This should be called after modifying core fields like timestamp.
+func (k *Kpak) RegenerateComputedFields() {
+	k.ID = k.generateID()
+	k.SPID = k.GenerateSPID()
+}
+
 // ToJSON serializes the k-pak for persistence or network transfer.
 func (k *Kpak) ToJSON() ([]byte, error) {
 	return json.Marshal(k)

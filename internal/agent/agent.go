@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
@@ -385,12 +384,8 @@ func (a *Agent) protoToKpak(proto *v1.Kpak) *core.Kpak {
 
 	// Regenerate IDs if we modified timestamp
 	if proto.Timestamp > 0 {
-		// Regenerate computed fields manually since we're modifying the struct
-		data := fmt.Sprintf("%s|%s|%v|%s|%f|%d",
-			kpak.Subject, kpak.Predicate, kpak.Object, kpak.Source, kpak.Confidence, kpak.Timestamp)
-		hash := sha256.Sum256([]byte(data))
-		kpak.ID = fmt.Sprintf("%x", hash)[:16] // First 16 chars for readability
-		kpak.SPID = kpak.GenerateSPID()
+		// Use the core method to ensure consistent hashing
+		kpak.RegenerateComputedFields()
 	}
 
 	return kpak

@@ -46,6 +46,8 @@ func (gc *GarbageCollector) Start() {
 	}
 
 	gc.running = true
+	// Reinitialize stopChan if it was closed from a previous Stop()
+	gc.stopChan = make(chan struct{})
 	gc.ticker = time.NewTicker(time.Duration(gc.intervalSeconds) * time.Second)
 
 	gc.wg.Add(1)
