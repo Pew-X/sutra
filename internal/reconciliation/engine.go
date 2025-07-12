@@ -117,3 +117,38 @@ func (e *Engine) GetStats() map[string]interface{} {
 		"total_subjects": len(e.subjectIndex),
 	}
 }
+
+// RemoveExpiredKpaks removes all expired k-paks from the truth store.
+// Returns the number of k-paks that were removed.
+func (e *Engine) RemoveExpiredKpaks() int {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	var expiredSPIDs []string
+
+	// Find all expired k-paks
+	for spid, kpak := range e.truthStore {
+		if kpak.IsExpired() {
+			expiredSPIDs = append(expiredSPIDs, spid)
+		}
+	}
+
+	// Remove expired k-paks from truth store and update indices
+	for _, spid := range expiredSPIDs {
+		kpak := e.truthStore[spid]
+
+		// Remove from truth store
+		delete(e.truthStore, spid)
+
+		// Update subject index
+		if spidSet, exists := e.subjectIndex[kpak.Subject]; exists {
+			delete(spidSet, spid)
+			// If this was the last SPID for this subject, remove the subject entry
+			if len(spidSet) == 0 {
+				delete(e.subjectIndex, kpak.Subject)
+			}
+		}
+	}
+
+	return len(expiredSPIDs)
+}

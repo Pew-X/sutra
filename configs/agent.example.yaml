@@ -10,3 +10,8 @@ join_peers: []
 
 log_level: "info"
 wal_path: "./data/knowledge.log"
+
+# TTL and Garbage Collection settings
+default_ttl_seconds: 0      # Default TTL for k-paks in seconds (0 = never expires)
+gc_enabled: true            # Enable automatic garbage collection of expired k-paks
+gc_interval_seconds: 300    # Run garbage collection every 5 minutes

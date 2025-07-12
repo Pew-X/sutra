@@ -10,6 +10,26 @@
 *.dylib
 
 synctl
+sutra-python-sdk
+
+api/python/v1
+
+# Test files (keep only test_ultimate_stress.go)
+test_auto_gc.go
+test_*_ttl*.go
+*debug*test*.py
+*simple*test*.py
+demo_*.py
+robust_*.py
+ultra_*.py
+
+test_ultimate_stress.go
+test_ttl.go
+
+TTL_AND_GC_IMPLEMENTATION_SUMMARY.md
+
+
+
 
 # Go build artifacts
 *.test

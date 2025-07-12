@@ -31,6 +31,7 @@ message Kpak {
   int64 timestamp = 6;     // Unix timestamp when created
   string id = 7;           // Content hash for uniqueness
   string spid = 8;         // Subject+Predicate hash for indexing
+  int64 expires_at = 9;    // Unix timestamp when this k-pak expires (0 = never expires)
 }
 
 // IngestResponse confirms receipt of knowledge packets
