@@ -131,7 +131,7 @@ Sūtra is an ambitious project. Our development is phased to deliver value and s
     *   **Goal:** Make Sūtra enterprise-ready and trustworthy.
     *   **Features:** End-to-end mTLS encryption, cryptographic signatures on all facts, and verifiable source identities.
 
-*   **Phase 3: The Stability Foundation ("Sūtra Stable") ✅ COMPLETED**
+*   **Phase 3: The Stability Foundation ("Sūtra Stable")**
     *   **Goal:** Ensure long-term operational health for production infrastructure.
     *   **Features:** ✅ Time-to-Live (TTL) on k-paks, ✅ automatic garbage collection, and WAL compaction. Possible use of Merkle trees truth hash verification resulting in efficient deduplication.
 
